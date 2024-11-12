@@ -1,0 +1,62 @@
+import java.util.*;
+
+public class LRUPageReplacement {
+
+    // Method for LRU Page Replacement
+    public static void lruPageReplacement(List<Integer> pages, int capacity) {
+        LinkedList<Integer> frame = new LinkedList<>();
+        int hit = 0, fault = 0;
+
+        System.out.println("\nPage Replacement Process:");
+
+        // Process each page
+        for (int page : pages) {
+            // Check if the page is already in the frame (page hit)
+            if (frame.contains(page)) {
+                hit++;
+                frame.remove(Integer.valueOf(page)); // Remove page to mark it as recently used
+                System.out.print(" H ");
+            } else {
+                fault++;
+                // If the frame is full, remove the least recently used page
+                if (frame.size() == capacity) {
+                    frame.removeFirst(); // Remove the LRU page
+                }
+                System.out.print(" F ");
+            }
+            // Add the current page to the frame (most recently used)
+            frame.add(page);
+        }
+
+        // Calculate hit and fault ratios
+        double hitRatio = (double) hit / pages.size() * 100;
+        double faultRatio = (double) fault / pages.size() * 100;
+
+        // Display results
+        System.out.println("\n\nTotal Page Faults: " + fault);
+        System.out.println("Total Page Hits: " + hit);
+        System.out.printf("Hit Ratio: %.2f%%\n", hitRatio);
+        System.out.printf("Fault Ratio: %.2f%%\n", faultRatio);
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        // Input page numbers
+        System.out.print("Enter the page numbers (space-separated): ");
+        String[] pageInput = sc.nextLine().split(" ");
+        List<Integer> pages = new ArrayList<>();
+        for (String page : pageInput) {
+            pages.add(Integer.parseInt(page));
+        }
+
+        // Input the frame capacity
+        System.out.print("Enter the frame capacity: ");
+        int capacity = sc.nextInt();
+
+        // Run LRU Page Replacement simulation
+        lruPageReplacement(pages, capacity);
+
+        sc.close();
+    }
+}

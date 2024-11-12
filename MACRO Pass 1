@@ -1,0 +1,115 @@
+import java.util.*;
+
+class Macro {
+    String name;
+    List<String> params;
+    List<String> body;
+
+    // Constructor for the Macro class
+    public Macro(String name, List<String> params, List<String> body) {
+        this.name = name;
+        this.params = params;
+        this.body = body;
+    }
+}
+
+class MacroPass1 {
+    // MNT: Macro Name Table, MDT: Macro Definition Table, ALA: Argument List Array
+    List<Map<String, Object>> mnt;
+    List<String> mdt;
+    List<List<String>> ala;
+
+    // Constructor for the MacroPass1 class
+    public MacroPass1() {
+        mnt = new ArrayList<>();
+        mdt = new ArrayList<>();
+        ala = new ArrayList<>();
+    }
+
+    // Method to define a macro and store its details in MNT and MDT
+    public void defineMacro(String name, String paramList, List<String> body) {
+        // Split the parameter list into a list of parameters
+        List<String> params = Arrays.asList(paramList.split(", "));
+
+        // Add macro details to MNT
+        Map<String, Object> macroDetails = new HashMap<>();
+        macroDetails.put("macro_name", name);
+        macroDetails.put("mdt_index", mdt.size() + 1); // MDT index starts from 1
+        macroDetails.put("params", params);
+        mnt.add(macroDetails);
+
+        // Add body lines to the MDT
+        mdt.addAll(body);
+    }
+
+    // Method to add actual parameters for a macro invocation to the ALA
+    public void addToAla(List<String> actualParams) {
+        ala.add(actualParams);
+    }
+
+    // Method to print the Macro Name Table (MNT)
+    public void printMnt() {
+        System.out.println("Macro Name Table (MNT):");
+        System.out.println("---------------------------------------------------------");
+        System.out.println("Macro Name | MDT Index | Parameters");
+        for (Map<String, Object> entry : mnt) {
+            System.out.printf("%-11s | %-9d | %s%n", entry.get("macro_name"),
+                    entry.get("mdt_index"), entry.get("params"));
+        }
+        System.out.println("---------------------------------------------------------");
+    }
+
+    // Method to print the Macro Definition Table (MDT)
+    public void printMdt() {
+        System.out.println("\nMacro Definition Table (MDT):");
+        System.out.println("---------------------------------------------------------");
+        System.out.println("Line Number | Instruction");
+        for (int i = 0; i < mdt.size(); i++) {
+            System.out.printf("%-12d | %s%n", i + 1, mdt.get(i));
+        }
+        System.out.println("---------------------------------------------------------");
+    }
+
+    // Method to print the Argument List Array (ALA)
+    public void printAla() {
+        System.out.println("\nArgument List Array (ALA):");
+        System.out.println("---------------------------------------------------------");
+        for (int i = 0; i < ala.size(); i++) {
+            System.out.printf("Macro Call %d: %s%n", i + 1, ala.get(i));
+        }
+        System.out.println("---------------------------------------------------------");
+    }
+
+    public static void main(String[] args) {
+        MacroPass1 macroProcessor = new MacroPass1();
+
+        // Define first macro M1
+        List<String> m1Body = Arrays.asList(
+                "MOVER &A, &X",     // MOVER &A, &X
+                "ADD &A, ='1'",     // ADD &A, ='1'
+                "MOVER &B, &Y",     // MOVER &B, &Y
+                "ADD &B, ='5'",     // ADD &B, ='5'
+                "MEND"
+        );
+        macroProcessor.defineMacro("M1", "&X, &Y, &A=AREG, &B=", m1Body);
+
+        // Define second macro M2
+        List<String> m2Body = Arrays.asList(
+                "MOVER &U, &P",     // MOVER &U, &P
+                "MOVER &V, &Q",     // MOVER &V, &Q
+                "ADD &U, ='15'",    // ADD &U, ='15'
+                "ADD &V, ='10'",    // ADD &V, ='10'
+                "MEND"
+        );
+        macroProcessor.defineMacro("M2", "&P, &Q, &U=CREG, &V=DREG", m2Body);
+
+        // Add actual parameters to the ALA for macro invocations
+        macroProcessor.addToAla(Arrays.asList("10", "20", "&B=CREG")); // M1 10, 20, &B=CREG
+        macroProcessor.addToAla(Arrays.asList("100", "200", "&V=AREG", "&U=BREG")); // M2 100, 200, &V=AREG, &U=BREG
+
+        // Print MNT, MDT, and ALA tables
+        macroProcessor.printMnt();
+        macroProcessor.printMdt();
+        macroProcessor.printAla();
+    }
+}

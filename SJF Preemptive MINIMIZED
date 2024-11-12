@@ -1,0 +1,57 @@
+import java.util.ArrayList;
+import java.util.List;
+
+class Process {
+    int pid, arrival, burst, completion, turnaround, waiting, remaining;
+
+    Process(int pid, int arrival, int burst) {
+        this.pid = pid;
+        this.arrival = arrival;
+        this.burst = burst;
+        this.remaining = burst;
+    }
+}
+
+public class SJFPreemptive {
+
+    public static void main(String[] args) {
+        List<Process> processes = new ArrayList<>();
+        processes.add(new Process(1, 0, 8));
+        processes.add(new Process(2, 1, 4));
+        processes.add(new Process(3, 2, 9));
+        processes.add(new Process(4, 3, 5));
+
+        int time = 0;
+        while (processes.stream().anyMatch(p -> p.remaining > 0)) {
+            List<Process> available = new ArrayList<>();
+            for (Process p : processes) {
+                if (p.arrival <= time && p.remaining > 0) {
+                    available.add(p);
+                }
+            }
+
+            if (!available.isEmpty()) {
+                Process shortest = available.stream().min((p1, p2) -> Integer.compare(p1.remaining, p2.remaining)).orElse(null);
+                if (shortest != null) {
+                    shortest.remaining -= 1;
+                    if (shortest.remaining == 0) {
+                        shortest.completion = time + 1;
+                        shortest.turnaround = shortest.completion - shortest.arrival;
+                        shortest.waiting = shortest.turnaround - shortest.burst;
+                    }
+                }
+            }
+            time++;
+        }
+
+        System.out.println("The SJF job is:");
+        System.out.printf("%-5s %-8s %-7s %-11s %-11s %-7s\n", "PID", "Arrival", "Burst", "Completion", "Turnaround", "Waiting");
+        processes.forEach(p -> System.out.printf("%-5d %-8d %-7d %-11d %-11d %-7d\n", p.pid, p.arrival, p.burst, p.completion, p.turnaround, p.waiting));
+
+        double avgTurnaround = processes.stream().mapToInt(p -> p.turnaround).average().orElse(0);
+        double avgWaiting = processes.stream().mapToInt(p -> p.waiting).average().orElse(0);
+
+        System.out.printf("\nAverage Turnaround Time: %.2f\n", avgTurnaround);
+        System.out.printf("Average Waiting Time: %.2f\n", avgWaiting);
+    }
+}

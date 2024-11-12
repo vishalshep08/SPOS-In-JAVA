@@ -1,0 +1,66 @@
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class OptimalPageReplacement {
+
+    public static void optimalPageReplacement() {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.print("Enter the page numbers (space-separated): ");
+        String[] pageInput = scanner.nextLine().split(" ");
+        int[] pages = new int[pageInput.length];
+        for (int i = 0; i < pageInput.length; i++) {
+            pages[i] = Integer.parseInt(pageInput[i]);
+        }
+
+        System.out.print("Enter the capacity of frame: ");
+        int capacity = scanner.nextInt();
+
+        ArrayList<Integer> frame = new ArrayList<>(capacity);
+        int hit = 0, fault = 0;
+
+        for (int i = 0; i < pages.length; i++) {
+            int page = pages[i];
+            if (frame.contains(page)) {
+                hit++;
+                System.out.print("H ");
+            } else {
+                fault++;
+                if (frame.size() < capacity) {
+                    frame.add(page);
+                } else {
+                    int farthest = -1, indexToReplace = 0;
+                    for (int j = 0; j < frame.size(); j++) {
+                        int framePage = frame.get(j);
+                        int nextUse = -1;
+                        for (int k = i + 1; k < pages.length; k++) {
+                            if (pages[k] == framePage) {
+                                nextUse = k;
+                                break;
+                            }
+                        }
+                        if (nextUse == -1) {
+                            indexToReplace = j;
+                            break;
+                        } else if (nextUse > farthest) {
+                            farthest = nextUse;
+                            indexToReplace = j;
+                        }
+                    }
+                    frame.set(indexToReplace, page);
+                }
+                System.out.print("F ");
+            }
+        }
+
+        double hitRatio = ((double) hit / pages.length) * 100;
+        double faultRatio = ((double) fault / pages.length) * 100;
+
+        System.out.printf("\nHits: %d, Faults: %d\n", hit, fault);
+        System.out.printf("Hit Ratio: %.2f%%, Fault Ratio: %.2f%%\n", hitRatio, faultRatio);
+    }
+
+    public static void main(String[] args) {
+        optimalPageReplacement();
+    }
+}

@@ -1,0 +1,118 @@
+import java.util.*;
+
+class MacroPass2 {
+
+    // The Macro Name Table (MNT), Macro Definition Table (MDT), and Argument List Array (ALA)
+    private List<Map<String, Object>> mnt;
+    private List<String> mdt;
+    private List<List<String>> ala;
+
+    public MacroPass2() {
+        mnt = new ArrayList<>();
+        mdt = new ArrayList<>();
+        ala = new ArrayList<>();
+    }
+
+    // Method to define a macro and store its details in MNT and MDT
+    public void defineMacro(String name, String paramList, List<String> body) {
+        // Split the parameter list into a list of parameters
+        List<String> params = Arrays.asList(paramList.split(", "));
+
+        // Add macro details to MNT
+        Map<String, Object> macroDetails = new HashMap<>();
+        macroDetails.put("macro_name", name);
+        macroDetails.put("mdt_index", mdt.size() + 1); // MDT index starts from 1
+        macroDetails.put("params", params);
+        mnt.add(macroDetails);
+
+        // Add body lines to the MDT
+        mdt.addAll(body);
+    }
+
+    // Method to add actual parameters for a macro invocation to the ALA
+    public void addToAla(List<String> actualParams) {
+        ala.add(actualParams);
+    }
+
+    // Method to substitute parameters in a macro body line
+    private String substituteParameters(String line, List<String> actualParams, List<String> paramNames) {
+        // Iterate over the formal parameters (paramNames) and replace them with actual parameters
+        for (int i = 0; i < paramNames.size(); i++) {
+            String param = paramNames.get(i);
+            if (line.contains(param)) {
+                // Replace the formal parameter with the actual parameter from the ALA
+                String actualParam = (i < actualParams.size()) ? actualParams.get(i) : "";
+                line = line.replace(param, actualParam);
+            }
+        }
+        return line;
+    }
+
+    // Method to perform Macro Pass 2: Substitute parameters in the macro body
+    public List<String> macroPass2() {
+        List<String> output = new ArrayList<>();
+
+        // Iterate through ALA (actual parameters) and MNT (formal parameters)
+        for (int idx = 0; idx < ala.size(); idx++) {
+            List<String> actualParams = ala.get(idx); // Actual parameters for this macro call
+            Map<String, Object> mntEntry = mnt.get(idx);  // MNT entry for the current macro
+
+            // Get the formal parameter names from MNT
+            List<String> paramNames = (List<String>) mntEntry.get("params"); // Formal params from MNT
+
+            // Get the macro body from MDT starting from the index in MNT
+            int mdtIndex = (int) mntEntry.get("mdt_index");
+            List<String> macroBody = mdt.subList(mdtIndex - 1, mdtIndex + paramNames.size() - 1); // Get lines for the macro body
+
+            // Substitute parameters for each line of the macro body
+            for (String line : macroBody) {
+                String transformedLine = substituteParameters(line, actualParams, paramNames);
+                output.add(transformedLine);
+            }
+        }
+
+        return output;
+    }
+
+    // Method to print the result after Macro Pass 2
+    public void printResult(List<String> output) {
+        System.out.println("\nAfter Macro Pass 2:");
+        System.out.println("---------------------------------------------------------");
+        for (String line : output) {
+            System.out.println(line);
+        }
+        System.out.println("---------------------------------------------------------");
+    }
+
+    public static void main(String[] args) {
+        MacroPass2 macroProcessor = new MacroPass2();
+
+        // Define first macro INCR
+        List<String> incrBody = Arrays.asList(
+                "MOVER &REG, &X",     // MOVER &REG, &X
+                "ADD &REG, &Y",       // ADD &REG, &Y
+                "MOVEM &REG, &X",     // MOVEM &REG, &X
+                "MEND"
+        );
+        macroProcessor.defineMacro("INCR", "&X, &Y, &REG=AREG", incrBody);
+
+        // Define second macro DECR
+        List<String> decrBody = Arrays.asList(
+                "MOVER &REG, &A",     // MOVER &REG, &A
+                "SUB &REG, &B",       // SUB &REG, &B
+                "MOVEM &REG, &A",     // MOVEM &REG, &A
+                "MEND"
+        );
+        macroProcessor.defineMacro("DECR", "&A, &B, &REG=BREG", decrBody);
+
+        // Add actual parameters to the ALA for macro invocations
+        macroProcessor.addToAla(Arrays.asList("N1", "N2", "REG=CREG")); // INCR N1, N2, REG=CREG
+        macroProcessor.addToAla(Arrays.asList("N1", "N2"));            // DECR N1, N2
+
+        // Perform Macro Pass 2
+        List<String> output = macroProcessor.macroPass2();
+
+        // Print the result after Macro Pass 2
+        macroProcessor.printResult(output);
+    }
+}

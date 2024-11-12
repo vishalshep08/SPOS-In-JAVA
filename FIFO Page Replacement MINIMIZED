@@ -1,0 +1,65 @@
+import java.util.Scanner;
+import java.util.HashSet;
+
+public class FIFOPageReplacement {
+
+    // Method for FIFO Page Replacement
+    public static void fifoPageReplacement(int[] pages, int capacity) {
+        int[] frame = new int[capacity];
+        for (int i = 0; i < capacity; i++) {
+            frame[i] = -1; // Initialize the frame with -1 (empty slots)
+        }
+
+        int hit = 0, fault = 0, index = 0;
+
+        // Process each page
+        for (int i = 0; i < pages.length; i++) {
+            boolean pageHit = false;
+
+            // Check if the page is already in the frame (page hit)
+            for (int j = 0; j < capacity; j++) {
+                if (frame[j] == pages[i]) {
+                    pageHit = true;
+                    hit++;
+                    System.out.print(" H ");
+                    break;
+                }
+            }
+
+            // If not a hit, we have a page fault
+            if (!pageHit) {
+                frame[index] = pages[i];
+                fault++;
+                System.out.print(" F ");
+                index = (index + 1) % capacity; // Circular increment for frame index
+            }
+        }
+
+        // Display the results
+        System.out.println("\nPage Faults: " + fault + "  Page Hits: " + hit);
+        System.out.printf("Hit Ratio: %.2f%%  Fault Ratio: %.2f%%\n",
+                (hit / (double) pages.length) * 100,
+                (fault / (double) pages.length) * 100);
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        // Input the pages
+        System.out.print("Enter the pages (space-separated): ");
+        String[] inputPages = sc.nextLine().split(" ");
+        int[] pages = new int[inputPages.length];
+        for (int i = 0; i < inputPages.length; i++) {
+            pages[i] = Integer.parseInt(inputPages[i]);
+        }
+
+        // Input the frame capacity
+        System.out.print("Enter the frame capacity: ");
+        int capacity = sc.nextInt();
+
+        // Run FIFO Page Replacement simulation
+        fifoPageReplacement(pages, capacity);
+
+        sc.close();
+    }
+}

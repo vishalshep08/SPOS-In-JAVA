@@ -1,0 +1,86 @@
+import java.util.*;
+
+public class LRUPageReplacement {
+
+    // Method for LRU Page Replacement
+    public static void lruPageReplacement(int[] pages, int capacity) {
+        LinkedList<Integer> frame = new LinkedList<>();
+        int hit = 0, fault = 0;
+
+        // Table to store the frame status at each step
+        int[][] table = new int[pages.length][capacity];
+
+        System.out.println("\n----------------------------------------------------------------------");
+
+        // Process each page
+        for (int i = 0; i < pages.length; i++) {
+            int page = pages[i];
+
+            // Check if the page is already in the frame (page hit)
+            if (frame.contains(page)) {
+                hit++;
+                frame.remove(Integer.valueOf(page)); // Remove the page
+                frame.add(page); // Add it to the end to mark it as recently used
+                System.out.print(" H ");
+            } else {
+                fault++;
+                // If the frame is not full, simply append the page
+                if (frame.size() < capacity) {
+                    frame.add(page);
+                } else {
+                    // If the frame is full, remove the least recently used page (the first page)
+                    frame.removeFirst();
+                    frame.add(page);
+                }
+                System.out.print(" F ");
+            }
+
+            // Update table for current state of the frame
+            for (int j = 0; j < frame.size(); j++) {
+                table[i][j] = frame.get(j);
+            }
+        }
+
+        System.out.println("\n----------------------------------------------------------------------");
+
+        // Display the page frame table
+        for (int i = 0; i < capacity; i++) {
+            for (int j = 0; j < pages.length; j++) {
+                System.out.print(String.format("%3d", table[j][i]));
+            }
+            System.out.println();
+        }
+
+        System.out.println("----------------------------------------------------------------------");
+
+        // Calculate hit ratio and fault ratio
+        double hitRatio = (double) hit / pages.length * 100;
+        double faultRatio = (double) fault / pages.length * 100;
+
+        System.out.println("Page Faults: " + fault + "  Page Hits: " + hit);
+        System.out.printf("Hit Ratio: %.2f%%  Fault Ratio: %.2f%%\n", hitRatio, faultRatio);
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        // Input the pages
+        System.out.print("Enter the number of pages: ");
+        int noOfPages = sc.nextInt();
+        int[] pages = new int[noOfPages];
+
+        System.out.println("Enter the page numbers:");
+        for (int i = 0; i < noOfPages; i++) {
+            pages[i] = sc.nextInt();
+        }
+
+        // Input the frame capacity
+        System.out.print("Enter the frame capacity: ");
+        int capacity = sc.nextInt();
+
+        // Run the LRU Page Replacement simulation
+        lruPageReplacement(pages, capacity);
+
+        sc.close();
+    }
+}

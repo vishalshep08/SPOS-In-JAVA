@@ -1,0 +1,106 @@
+import java.util.*;
+
+class Process {
+    int pid;
+    int arrivalTime;
+    int burstTime;
+    int priority;
+    int completionTime;
+    int turnaroundTime;
+    int waitingTime;
+
+    // Constructor
+    public Process(int pid, int arrivalTime, int burstTime, int priority) {
+        this.pid = pid;
+        this.arrivalTime = arrivalTime;
+        this.burstTime = burstTime;
+        this.priority = priority;
+        this.completionTime = 0;
+        this.turnaroundTime = 0;
+        this.waitingTime = 0;
+    }
+}
+
+public class FCFScheduler {
+
+    // First Come First Serve Scheduling
+    public static List<Process> fcfs(List<Process> processes) {
+        // Sort processes by arrival time
+        processes.sort(Comparator.comparingInt(p -> p.arrivalTime));
+
+        int currentTime = 0;
+
+        for (Process process : processes) {
+            // If the CPU is idle (current time is less than process arrival time)
+            if (currentTime < process.arrivalTime) {
+                currentTime = process.arrivalTime;
+            }
+            // Completion time
+            process.completionTime = currentTime + process.burstTime;
+            // Update current time after process is completed
+            currentTime = process.completionTime;
+            // Turnaround time = Completion time - Arrival time
+            process.turnaroundTime = process.completionTime - process.arrivalTime;
+            // Waiting time = Turnaround time - Burst time
+            process.waitingTime = process.turnaroundTime - process.burstTime;
+        }
+
+        return processes;
+    }
+
+    // Helper function to calculate averages
+    public static void calculateAverages(List<Process> processes) {
+        double totalTurnaroundTime = 0;
+        double totalWaitingTime = 0;
+        int n = processes.size();
+
+        for (Process p : processes) {
+            totalTurnaroundTime += p.turnaroundTime;
+            totalWaitingTime += p.waitingTime;
+        }
+
+        double avgTurnaroundTime = totalTurnaroundTime / n;
+        double avgWaitingTime = totalWaitingTime / n;
+
+        System.out.printf("\nAverage Turnaround Time: %.2f\n", avgTurnaroundTime);
+        System.out.printf("Average Waiting Time: %.2f\n", avgWaitingTime);
+    }
+
+    // Display results in a table format
+    public static void displayResults(List<Process> processes, String algorithmName) {
+        System.out.println("\n" + algorithmName + ":");
+        System.out.printf("%-10s%-10s%-10s%-10s%-15s%-15s%-10s\n", "PID", "Arrival", "Burst", "Priority", "Completion", "Turnaround", "Waiting");
+
+        for (Process p : processes) {
+            System.out.printf("%-10d%-10d%-10d%-10d%-15d%-15d%-10d\n", p.pid, p.arrivalTime, p.burstTime, p.priority, p.completionTime, p.turnaroundTime, p.waitingTime);
+        }
+
+        // Calculate and display averages
+        calculateAverages(processes);
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.print("Enter the number of processes: ");
+        int numProcesses = sc.nextInt();
+        List<Process> processes = new ArrayList<>();
+
+        // Read process details
+        for (int i = 0; i < numProcesses; i++) {
+            System.out.print("Enter arrival time for process " + (i + 1) + ": ");
+            int arrivalTime = sc.nextInt();
+            System.out.print("Enter burst time for process " + (i + 1) + ": ");
+            int burstTime = sc.nextInt();
+            System.out.print("Enter priority for process " + (i + 1) + " (optional, enter 0 if not applicable): ");
+            int priority = sc.nextInt();
+            processes.add(new Process(i + 1, arrivalTime, burstTime, priority));
+        }
+
+        // FCFS Scheduling
+        List<Process> fcfsResult = fcfs(processes);
+        displayResults(fcfsResult, "First Come First Serve (FCFS)");
+
+        sc.close();
+    }
+}

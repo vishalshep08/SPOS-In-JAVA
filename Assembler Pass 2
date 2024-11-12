@@ -1,0 +1,124 @@
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class PassTwoAssembler {
+
+    static Map<String, Integer> symbolTable = new HashMap<>() {{
+        put("START", 100);
+        put("A", 100);
+        put("L2", 108);
+        put("L", 110);
+        put("B", 120);
+        put("L1", 128);
+        put("C", 133);
+    }};
+
+    static Map<String, Integer> literalTable = new HashMap<>() {{
+        put("='5'", 105);
+        put("='10'", 106);
+        put("='15'", 111);
+    }};
+
+    static List<Integer> poolTable = List.of(0, 2);
+
+    static List<String[]> intermediateCode = List.of(
+            new String[]{"100", "START", "100"},
+            new String[]{"100", "DS", "5"},
+            new String[]{"105", "LOAD", "A"},
+            new String[]{"106", "ADD", "AREG", "='5'"},
+            new String[]{"107", "MULT", "BREG", "='10'"},
+            new String[]{"108", "TRANS", "L"},
+            new String[]{"109", "PRINT", "L1"},
+            new String[]{"110", "LTORG"},
+            new String[]{"111", "ADD", "AREG", "='5'"},
+            new String[]{"112", "SUB", "BREG", "='15'"},
+            new String[]{"113", "ADD", "B"},
+            new String[]{"120", "EQU", "L+10"},
+            new String[]{"128", "DS", "5"},
+            new String[]{"133", "DC", "10"},
+            new String[]{"134", "STOP"},
+            new String[]{"135", "END"}
+    );
+
+    static Map<String, String> opcodeTable = new HashMap<>() {{
+        put("START", "00");
+        put("DS", "01");
+        put("LOAD", "02");
+        put("ADD", "03");
+        put("MULT", "04");
+        put("TRANS", "05");
+        put("PRINT", "06");
+        put("LTORG", "07");
+        put("SUB", "08");
+        put("EQU", "09");
+        put("ORIGIN", "10");
+        put("DC", "11");
+        put("STOP", "12");
+        put("END", "13");
+    }};
+
+    public static void main(String[] args) {
+        processPassTwo();
+    }
+
+    static void processPassTwo() {
+        System.out.println("Final Machine Code:");
+        System.out.println("| Address | Opcode | Operands      |");
+        System.out.println("|---------|--------|---------------|");
+
+        for (String[] codeLine : intermediateCode) {
+            String address = codeLine[0];
+            String opcode = codeLine[1];
+            StringBuilder operandStr = new StringBuilder();
+
+            if (opcode.equals("START") || opcode.equals("DS") || opcode.equals("DC")) {
+                String operand = codeLine[2];
+                operandStr.append(operand);
+                System.out.printf("%s %s %s%n", address, opcodeTable.get(opcode), operandStr);
+
+            } else if (opcodeTable.containsKey(opcode)) {
+                for (int i = 2; i < codeLine.length; i++) {
+                    String operand = codeLine[i];
+                    operandStr.append(resolveOperand(operand)).append(" ");
+                }
+                System.out.printf("%s %s %s%n", address, opcodeTable.get(opcode), operandStr.toString().trim());
+
+            } else if (opcode.equals("LTORG")) {
+                literalTable.forEach((literal, litAddress) -> {
+                    if (litAddress >= Integer.parseInt(address)) {
+                        System.out.printf("%s %s %s%n", litAddress, opcodeTable.get("DC"), literal);
+                    }
+                });
+
+            } else if (opcode.equals("EQU")) {
+                String expression = codeLine[2];
+                for (Map.Entry<String, Integer> entry : symbolTable.entrySet()) {
+                    expression = expression.replace(entry.getKey(), entry.getValue().toString());
+                }
+                int resolvedAddress = evalExpression(expression);
+                symbolTable.put(codeLine[2], resolvedAddress);
+                System.out.printf("%s %s %s%n", address, opcodeTable.get(opcode), resolvedAddress);
+
+            } else if (opcode.equals("STOP") || opcode.equals("END")) {
+                System.out.printf("%s %s%n", address, opcodeTable.get(opcode));
+            }
+        }
+    }
+
+    static String resolveOperand(String operand) {
+        if (symbolTable.containsKey(operand)) {
+            return symbolTable.get(operand).toString();
+        } else if (literalTable.containsKey(operand)) {
+            return literalTable.get(operand).toString();
+        } else {
+            return operand;
+        }
+    }
+
+    static int evalExpression(String expression) {
+        // Simplified evaluation logic (assuming expression is arithmetic)
+        // Could be expanded with a full expression parser if needed
+        return Integer.parseInt(expression.replace("+", "").trim());
+    }
+}

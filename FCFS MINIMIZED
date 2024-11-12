@@ -1,0 +1,69 @@
+class Process {
+    int pid;
+    int arrival;
+    int burst;
+    int completion;
+    int turnaround;
+    int waiting;
+
+    // Constructor
+    public Process(int pid, int arrival, int burst) {
+        this.pid = pid;
+        this.arrival = arrival;
+        this.burst = burst;
+        this.completion = 0;
+        this.turnaround = 0;
+        this.waiting = 0;
+    }
+}
+
+public class FCFS {
+
+    public static void main(String[] args) {
+        // Creating an array of processes
+        Process[] processes = {
+                new Process(1, 0, 8),
+                new Process(2, 1, 4),
+                new Process(3, 2, 9),
+                new Process(4, 3, 5)
+        };
+
+        // Sort processes based on arrival time
+        java.util.Arrays.sort(processes, (p1, p2) -> Integer.compare(p1.arrival, p2.arrival));
+
+        int time = 0;
+
+        // Processing each process to calculate completion, turnaround, and waiting times
+        for (Process p : processes) {
+            // The time is updated to the maximum of the current time or process arrival time,
+            // then the burst time of the process is added to calculate the completion time
+            time = Math.max(time, p.arrival) + p.burst;
+            p.completion = time;
+            p.turnaround = p.completion - p.arrival;
+            p.waiting = p.turnaround - p.burst;
+        }
+
+        // Display the results
+        System.out.println("The FCFS job is:");
+        System.out.println("PID  Arrival  Burst  Completion  Turnaround  Waiting");
+
+        // Print each process details
+        for (Process p : processes) {
+            System.out.printf("%-5d%-8d%-7d%-11d%-11d%-7d\n", p.pid, p.arrival, p.burst, p.completion, p.turnaround, p.waiting);
+        }
+
+        // Calculate the averages for Turnaround Time and Waiting Time
+        double avgTurnaround = 0;
+        double avgWaiting = 0;
+        for (Process p : processes) {
+            avgTurnaround += p.turnaround;
+            avgWaiting += p.waiting;
+        }
+        avgTurnaround /= processes.length;
+        avgWaiting /= processes.length;
+
+        // Print the average turnaround and waiting times
+        System.out.printf("\nAverage Turnaround Time: %.2f\n", avgTurnaround);
+        System.out.printf("Average Waiting Time: %.2f\n", avgWaiting);
+    }
+}

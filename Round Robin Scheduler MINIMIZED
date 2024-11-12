@@ -1,1 +1,80 @@
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
+
+class Process {
+    int pid, arrivalTime, burstTime, remainingTime, completionTime, turnaroundTime, waitingTime;
+
+    Process(int pid, int arrivalTime, int burstTime) {
+        this.pid = pid;
+        this.arrivalTime = arrivalTime;
+        this.burstTime = burstTime;
+        this.remainingTime = burstTime;
+    }
+}
+
+public class RoundRobinScheduler {
+
+    public static ArrayList<Process> roundRobin(ArrayList<Process> processes, int quantum) {
+        int time = 0, completed = 0;
+        Queue<Process> queue = new LinkedList<>();
+        boolean[] addedToQueue = new boolean[processes.size()]; // Track if a process has been added to queue
+
+        while (completed < processes.size()) {
+            // Add processes to queue if they've arrived
+            for (int i = 0; i < processes.size(); i++) {
+                Process p = processes.get(i);
+                if (p.arrivalTime <= time && !addedToQueue[i] && p.remainingTime > 0) {
+                    queue.add(p);
+                    addedToQueue[i] = true; // Mark as added
+                }
+            }
+
+            if (!queue.isEmpty()) {
+                Process p = queue.poll();
+                int execTime = Math.min(p.remainingTime, quantum);
+                time += execTime;
+                p.remainingTime -= execTime;
+
+                if (p.remainingTime == 0) {
+                    p.completionTime = time;
+                    p.turnaroundTime = p.completionTime - p.arrivalTime;
+                    p.waitingTime = p.turnaroundTime - p.burstTime;
+                    completed++;
+                } else {
+                    queue.add(p); // Re-add the process to the queue if it's not finished
+                }
+            } else {
+                time++; // Increment time if no process is available
+            }
+        }
+        return processes;
+    }
+
+    public static void displayResults(ArrayList<Process> processes, String algorithmName) {
+        System.out.println("\n" + algorithmName + ":");
+        System.out.printf("%-10s%-10s%-10s%-15s%-15s%-10s\n", "PID", "Arrival", "Burst", "Completion", "Turnaround", "Waiting");
+
+        double totalTurnaround = 0, totalWaiting = 0;
+        for (Process p : processes) {
+            System.out.printf("%-10d%-10d%-10d%-15d%-15d%-10d\n", p.pid, p.arrivalTime, p.burstTime, p.completionTime, p.turnaroundTime, p.waitingTime);
+            totalTurnaround += p.turnaroundTime;
+            totalWaiting += p.waitingTime;
+        }
+
+        System.out.printf("\nAverage Turnaround Time: %.2f\n", totalTurnaround / processes.size());
+        System.out.printf("Average Waiting Time: %.2f\n", totalWaiting / processes.size());
+    }
+
+    public static void main(String[] args) {
+        ArrayList<Process> processes = new ArrayList<>();
+        processes.add(new Process(1, 0, 8));
+        processes.add(new Process(2, 1, 4));
+        processes.add(new Process(3, 2, 9));
+        processes.add(new Process(4, 3, 5));
+
+        roundRobin(processes, 2);
+        displayResults(processes, "Round Robin (Time Quantum = 2)");
+    }
+}

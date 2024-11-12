@@ -1,0 +1,96 @@
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class OptimalPageReplacement {
+    public static void optimalPageReplacement() {
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.print("Enter the number of pages you want to enter: ");
+        int noOfPages = scanner.nextInt();
+        ArrayList<Integer> pages = new ArrayList<>();
+
+        System.out.println("Enter the page numbers:");
+        for (int i = 0; i < noOfPages; i++) {
+            int page = scanner.nextInt();
+            pages.add(page);
+        }
+
+        System.out.print("Enter the capacity of frame: ");
+        int capacity = scanner.nextInt();
+        ArrayList<Integer> frame = new ArrayList<>(capacity);
+        int[][] table = new int[noOfPages][capacity];
+
+        int hit = 0, fault = 0;
+
+        System.out.println("\n----------------------------------------------------------------------");
+        for (int i = 0; i < noOfPages; i++) {
+            int page = pages.get(i);
+
+            // Check if page is already in the frame (page hit)
+            if (frame.contains(page)) {
+                hit++;
+                System.out.printf("%4s", "H");
+            } else {
+                fault++;
+                // If the frame is not full, simply add the page
+                if (frame.size() < capacity) {
+                    frame.add(page);
+                } else {
+                    // Find the page that will not be used for the longest period in the future
+                    int farthest = -1;
+                    int indexToReplace = 0;
+                    for (int j = 0; j < frame.size(); j++) {
+                        int framePage = frame.get(j);
+                        if (!pages.subList(i + 1, noOfPages).contains(framePage)) {
+                            indexToReplace = j;
+                            break;
+                        } else {
+                            int nextUse = pages.subList(i + 1, noOfPages).indexOf(framePage) + i + 1;
+                            if (nextUse > farthest) {
+                                farthest = nextUse;
+                                indexToReplace = j;
+                            }
+                        }
+                    }
+                    // Replace the chosen page
+                    frame.set(indexToReplace, page);
+                }
+                System.out.printf("%4s", "F");
+            }
+
+            // Update table for current state of the frame
+            for (int j = 0; j < capacity; j++) {
+                if (j < frame.size()) {
+                    table[i][j] = frame.get(j);
+                } else {
+                    table[i][j] = -1;
+                }
+            }
+        }
+
+        System.out.println("\n----------------------------------------------------------------------");
+
+        // Display the page frame table
+        for (int i = 0; i < capacity; i++) {
+            for (int j = 0; j < noOfPages; j++) {
+                System.out.printf("%3d ", table[j][i]);
+            }
+            System.out.println();
+        }
+
+        System.out.println("----------------------------------------------------------------------");
+
+        // Calculate hit ratio and fault ratio
+        double faultRatio = (double) fault / noOfPages * 100;
+        double hitRatio = (double) hit / noOfPages * 100;
+
+        System.out.println("Page Faults: " + fault);
+        System.out.println("Page Hits: " + hit);
+        System.out.printf("Hit Ratio: %.2f%%\n", hitRatio);
+        System.out.printf("Fault Ratio: %.2f%%\n", faultRatio);
+    }
+
+    public static void main(String[] args) {
+        optimalPageReplacement();
+    }
+}

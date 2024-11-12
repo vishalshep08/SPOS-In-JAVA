@@ -1,0 +1,210 @@
+import java.util.*;
+
+class Symbol {
+    String name;
+    int address;
+
+    Symbol(String name, int address) {
+        this.name = name;
+        this.address = address;
+    }
+}
+
+class Literal {
+    String literal;
+    int address;
+
+    Literal(String literal, int address) {
+        this.literal = literal;
+        this.address = address;
+    }
+}
+
+public class Assembler {
+    static List<Symbol> symbolTable = new ArrayList<>();
+    static List<Literal> literalTable = new ArrayList<>();
+    static List<Integer> poolTable = new ArrayList<>();
+    static List<String[]> intermediateCode = new ArrayList<>();
+    static int locationCounter = 100;
+    static int literalCounter = 0;
+
+    public static void main(String[] args) {
+        String[][] assemblyCode = {
+                {"START", "100"},
+                {"A", "DS", "3"},
+                {"L1", "MOVEM", "AREG", "B"},
+                {"", "ADD", "AREG", "C"},
+                {"", "MOVER", "AREG", "='12'"},
+                {"D", "EQU", "A+1"},
+                {"", "LTORG"},
+                {"L2", "PRINT", "D"},
+                {"", "ORIGIN", "A-1"},
+                {"", "MOVER", "AREG", "='5'"},
+                {"C", "DC", "'5'"},
+                {"", "ORIGIN", "L2+1"},
+                {"", "STOP"},
+                {"B", "DC", "'19'"},
+                {"", "END"}
+        };
+
+        // Pass 1: First scan to define all labels
+        for (String[] line : assemblyCode) {
+            String label = line[0];
+            String opcode = line[1];
+            String[] operands = Arrays.copyOfRange(line, 2, line.length);
+
+            if (opcode.equals("START")) {
+                locationCounter = Integer.parseInt(operands[0]);
+                intermediateCode.add(new String[]{String.valueOf(locationCounter), opcode, String.join(", ", operands)});
+            } else if (!label.isEmpty()) {
+                if (opcode.equals("DS") || opcode.equals("DC")) {
+                    symbolTable.add(new Symbol(label, locationCounter));
+                } else {
+                    symbolTable.add(new Symbol(label, locationCounter++));
+                }
+            }
+        }
+
+        // Reset location counter for the second pass
+        locationCounter = 100;
+
+        // Pass 1: Second scan for processing directives and instructions
+        for (String[] line : assemblyCode) {
+            String label = line[0];
+            String opcode = line[1];
+            String[] operands = Arrays.copyOfRange(line, 2, line.length);
+
+            switch (opcode) {
+                case "START":
+                    locationCounter = Integer.parseInt(operands[0]);
+                    intermediateCode.add(new String[]{String.valueOf(locationCounter), opcode, String.join(", ", operands)});
+                    break;
+
+                case "DS":
+                    symbolTable.add(new Symbol(label, locationCounter));
+                    locationCounter += Integer.parseInt(operands[0]);
+                    break;
+
+                case "DC":
+                    symbolTable.add(new Symbol(label, locationCounter));
+                    intermediateCode.add(new String[]{String.valueOf(locationCounter), opcode, String.join(", ", operands)});
+                    locationCounter++;
+                    break;
+
+                case "MOVEM":
+                case "MOVER":
+                case "ADD":
+                case "PRINT":
+                case "STOP":
+                    if (!label.isEmpty() && symbolTable.stream().noneMatch(s -> s.name.equals(label))) {
+                        symbolTable.add(new Symbol(label, locationCounter));
+                    }
+                    intermediateCode.add(new String[]{String.valueOf(locationCounter), opcode, String.join(", ", operands)});
+                    locationCounter++;
+                    break;
+
+                case "EQU":
+                    String expression = operands[0];
+                    for (Symbol s : symbolTable) {
+                        expression = expression.replace(s.name, String.valueOf(s.address));
+                    }
+                    int address = eval(expression);
+                    symbolTable.add(new Symbol(label, address));
+                    break;
+
+                case "LTORG":
+                    for (Literal l : literalTable) {
+                        if (l.address == -1) {
+                            l.address = locationCounter++;
+                            intermediateCode.add(new String[]{String.valueOf(l.address), "DC", l.literal});
+                        }
+                    }
+                    poolTable.add(literalCounter);
+                    literalTable.clear();
+                    break;
+
+                case "ORIGIN":
+                    expression = operands[0];
+                    for (Symbol s : symbolTable) {
+                        expression = expression.replace(s.name, String.valueOf(s.address));
+                    }
+                    locationCounter = eval(expression);
+                    break;
+
+                case "END":
+                    for (Literal l : literalTable) {
+                        if (l.address == -1) {
+                            l.address = locationCounter++;
+                            intermediateCode.add(new String[]{String.valueOf(l.address), "DC", l.literal});
+                        }
+                    }
+                    poolTable.add(literalCounter);
+                    break;
+            }
+
+            // Add literals to literal table for future processing
+            for (String operand : operands) {
+                if (operand.startsWith("='")) {
+                    if (literalTable.stream().noneMatch(l -> l.literal.equals(operand))) {
+                        literalTable.add(new Literal(operand, -1));
+                        literalCounter++;
+                    }
+                }
+            }
+        }
+
+        // Output tables
+        displaySymbolTable();
+        displayLiteralTable();
+        displayIntermediateCode();
+        displayPoolTable();
+    }
+
+    static void displaySymbolTable() {
+        System.out.println("Symbol Table:");
+        System.out.printf("| %-6s | %-7s |\n", "Symbol", "Address");
+        System.out.println("|--------|---------|");
+        for (Symbol symbol : symbolTable) {
+            System.out.printf("| %-6s | %-7d |\n", symbol.name, symbol.address);
+        }
+    }
+
+    static void displayLiteralTable() {
+        System.out.println("\nLiteral Table:");
+        System.out.printf("| %-5s | %-7s | %-7s |\n", "Index", "Literal", "Address");
+        System.out.println("|-------|---------|---------|");
+        int idx = 0;
+        for (Literal literal : literalTable) {
+            String address = literal.address == -1 ? "Undefined" : String.valueOf(literal.address);
+            System.out.printf("| L%-5d | %-7s | %-7s |\n", idx++, literal.literal, address);
+        }
+    }
+
+    static void displayIntermediateCode() {
+        System.out.println("\nIntermediate Code:");
+        System.out.printf("| %-8s | %-6s | %-13s |\n", "Address", "Opcode", "Operands");
+        System.out.println("|---------|--------|---------------|");
+        for (String[] line : intermediateCode) {
+            System.out.printf("| %-8s | %-6s | %-13s |\n", line[0], line[1], line[2]);
+        }
+    }
+
+    static void displayPoolTable() {
+        System.out.println("\nPool Table:");
+        System.out.printf("| %-11s | %-11s |\n", "Pool Number", "Start Index");
+        System.out.println("|-------------|-------------|");
+        for (int i = 0; i < poolTable.size(); i++) {
+            System.out.printf("| %-11d | %-11d |\n", i + 1, poolTable.get(i));
+        }
+    }
+
+    static int eval(String expression) {
+        // Basic expression evaluation (addition only for simplicity)
+        String[] tokens = expression.split("\\+");
+        int result = 0;
+        for (String token : tokens) {
+            result += Integer.parseInt(token.trim());
+        }
+        return result;
+    }
+}

@@ -199,11 +199,17 @@ public class Assembler {
     }
 
     static int eval(String expression) {
-        // Basic expression evaluation (addition only for simplicity)
-        String[] tokens = expression.split("\\+");
+        // Basic expression evaluation for both addition and subtraction
+        String[] tokens = expression.split("([+-])");  // Split on + or -
         int result = 0;
+        int sign = 1;  // Start with positive sign
+
         for (String token : tokens) {
-            result += Integer.parseInt(token.trim());
+            if (token.isEmpty()) continue; // Skip empty tokens (in case of leading signs)
+            result += sign * Integer.parseInt(token.trim());
+            // Adjust the sign based on the operator
+            if (expression.contains("+" + token)) sign = 1;
+            else if (expression.contains("-" + token)) sign = -1;
         }
         return result;
     }
